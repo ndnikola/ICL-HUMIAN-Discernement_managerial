@@ -111,9 +111,9 @@ window.CONTENUS = {
       "champs": [
         { "cle": "interlocuteur", "question": "Qui est l'interlocuteur ?" },
         { "cle": "situation", "question": "Quelle est sa situation ?" },
+        { "cle": "tonalite", "question": "Quelle tonalité souhaitons-nous ?" },
         { "cle": "resultat", "question": "Quel résultat attendons-nous ?" },
         { "cle": "contraintes", "question": "Quelles sont les contraintes ?" },
-        { "cle": "tonalite", "question": "Quelle tonalité souhaitons-nous ?" },
         { "cle": "prochaineEtape", "question": "Quelle prochaine étape proposer ?" }
       ],
       "gabarit": "Rédige un mail à {{interlocuteur}}, dans la situation suivante : {{situation}}. Résultat attendu : {{resultat}}. Contraintes à respecter : {{contraintes}}. Tonalité souhaitée : {{tonalite}}. Termine en proposant cette prochaine étape : {{prochaineEtape}}.",
@@ -176,11 +176,11 @@ window.CONTENUS = {
       "ancrage": "La vérification n'est pas une option, c'est la dernière étape de la méthode.",
       "questions": [
         "Les faits sont-ils exacts ?",
-        "La réponse tient-elle compte du contexte ?",
         "Les données sont-elles appropriées ?",
+        "La réponse tient-elle compte du contexte ?",
         "Le ton convient-il à l'interlocuteur ?",
-        "La décision reste-t-elle sous responsabilité humaine ?",
-        "Quel impact cette réponse peut-elle produire ?"
+        "Quel impact cette réponse peut-elle produire ?",
+        "La décision reste-t-elle sous responsabilité humaine ?"
       ],
       "dureeIndicative": "7 min"
     },
