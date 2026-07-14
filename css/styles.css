@@ -1,0 +1,560 @@
+/* ==========================================================================
+   Variables
+   ========================================================================== */
+:root {
+  --bg: #12141a;
+  --bg-alt: #1b1e27;
+  --texte: #f4f4f2;
+  --texte-att: #b7bcc9;
+  --accent: #6fd3c7;
+  --accent-2: #f2c14e;
+  --attente-bg: #3a2f14;
+  --attente-bord: #f2c14e;
+
+  --pole-career: #4fb3a9;
+  --pole-formation: #8f7fe0;
+  --pole-taxe: #e0a94f;
+  --pole-alternance: #5e9fe0;
+  --pole-event: #e07f9f;
+
+  --marge: clamp(1.25rem, 4vw, 4rem);
+  --rayon: 0.75rem;
+  --transition-rapide: 180ms ease;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #12141a;
+    --bg-alt: #1b1e27;
+    --texte: #f4f4f2;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--texte);
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+body { overflow: hidden; }
+
+h1, h2, h3 { line-height: 1.2; margin: 0 0 0.75em; }
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.06);
+  color: var(--texte);
+  border-radius: var(--rayon);
+  padding: 0.6em 1.1em;
+  font-size: 1rem;
+  transition: background var(--transition-rapide), transform var(--transition-rapide);
+}
+button:hover { background: rgba(255,255,255,0.14); }
+button:active { transform: scale(0.97); }
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.lien-evitement {
+  position: absolute;
+  left: -999px;
+  top: 0;
+  background: var(--accent);
+  color: #05201c;
+  padding: 0.75em 1em;
+  z-index: 1000;
+}
+.lien-evitement:focus { left: 0; }
+
+/* ==========================================================================
+   Défilement magnétique
+   ========================================================================== */
+.parcours {
+  height: 100vh;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+}
+.parcours.libre { scroll-snap-type: none; }
+
+.screen {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: var(--marge);
+  text-align: center;
+  position: relative;
+}
+.screen:nth-child(even) { background: var(--bg-alt); }
+
+.screen-contenu { max-width: 62rem; width: 100%; }
+
+.titre-ecran { font-size: clamp(1.6rem, 4vw, 2.75rem); }
+
+.ancrage {
+  font-size: clamp(1.05rem, 2vw, 1.35rem);
+  font-style: italic;
+  color: var(--texte-att);
+  max-width: 46rem;
+  margin: 1.25em auto 0;
+}
+
+.question-groupe {
+  font-size: clamp(1.2rem, 2.5vw, 1.75rem);
+  margin: 0.75em 0;
+}
+
+.relances {
+  list-style: none;
+  padding: 0;
+  margin: 1em 0 0;
+  color: var(--texte-att);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5em 1.25em;
+  justify-content: center;
+}
+.relances li::before { content: "— "; }
+
+/* Bloc d'attente : contenu à finaliser avant la séance */
+.bloc-attente {
+  background: var(--attente-bg);
+  border: 1px dashed var(--attente-bord);
+  color: #ffe8ab;
+  border-radius: var(--rayon);
+  padding: 0.6em 0.9em;
+  font-size: 0.95rem;
+  display: inline-block;
+  margin-top: 0.75em;
+}
+
+/* ==========================================================================
+   Écran 1 — Accueil
+   ========================================================================== */
+.ecran-accueil .meta {
+  color: var(--texte-att);
+  margin-top: 1em;
+  font-size: 1.05rem;
+}
+.fleche-defilement {
+  margin-top: 2.5em;
+  animation: rebond 2s infinite;
+}
+@keyframes rebond {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(10px); }
+}
+
+/* ==========================================================================
+   Écran 2 — Mots-clés
+   ========================================================================== */
+.mots-cles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75em 1em;
+  justify-content: center;
+  list-style: none;
+  padding: 0;
+  margin: 1.5em 0 0;
+}
+.mots-cles li {
+  padding: 0.5em 1.1em;
+  border-radius: 999px;
+  background: rgba(111,211,199,0.12);
+  border: 1px solid rgba(111,211,199,0.4);
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 500ms ease, transform 500ms ease;
+}
+.mots-cles li.visible { opacity: 1; transform: translateY(0); }
+
+/* ==========================================================================
+   Écran 3 — Deux blocs
+   ========================================================================== */
+.deux-blocs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1.5em;
+  margin-top: 1.5em;
+  text-align: left;
+}
+.bloc {
+  background: rgba(255,255,255,0.05);
+  border-radius: var(--rayon);
+  padding: 1.25em 1.5em;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 600ms ease, transform 600ms ease;
+}
+.bloc.visible { opacity: 1; transform: translateY(0); }
+.bloc ul { margin: 0.5em 0 0; padding-left: 1.2em; }
+.bloc li { margin: 0.35em 0; }
+
+/* ==========================================================================
+   Écran 4 — Citation
+   ========================================================================== */
+blockquote.citation {
+  font-size: clamp(1.3rem, 3vw, 2rem);
+  font-weight: 300;
+  margin: 0;
+  padding: 0 1em;
+  border-left: 4px solid var(--accent);
+}
+.citation-source { color: var(--texte-att); margin-top: 0.75em; }
+
+/* ==========================================================================
+   Écran 5 — Mission collective
+   ========================================================================== */
+.mission-liste {
+  list-style: none;
+  padding: 0;
+  margin: 1.25em 0 0;
+  display: grid;
+  gap: 0.6em;
+  text-align: left;
+  max-width: 34rem;
+  margin-inline: auto;
+}
+.mission-liste li {
+  background: rgba(255,255,255,0.05);
+  border-radius: var(--rayon);
+  padding: 0.6em 1em;
+}
+
+/* ==========================================================================
+   Démonstrations (écrans 6, 9, 11)
+   ========================================================================== */
+.consigne-box {
+  background: rgba(255,255,255,0.06);
+  border-radius: var(--rayon);
+  padding: 1.25em 1.5em;
+  font-size: 1.15rem;
+  margin: 1.25em 0;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75em;
+  justify-content: center;
+  margin-top: 1em;
+}
+.resultat-secours {
+  margin-top: 1.25em;
+  text-align: left;
+}
+.resultat-secours[hidden] { display: none; }
+
+.documents-grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: 0.75em;
+  margin: 1.25em 0;
+}
+.document-carte {
+  background: rgba(255,255,255,0.05);
+  border-radius: var(--rayon);
+  padding: 1em 0.5em;
+}
+.document-carte .icone { font-size: 2rem; display: block; margin-bottom: 0.35em; }
+
+/* ==========================================================================
+   Écran 7 — Débrief (textareas)
+   ========================================================================== */
+.contributions {
+  display: grid;
+  gap: 0.75em;
+  margin: 1.25em 0;
+  text-align: left;
+}
+.contributions textarea {
+  width: 100%;
+  min-height: 4.5em;
+  border-radius: var(--rayon);
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.04);
+  color: var(--texte);
+  padding: 0.75em;
+  font-family: inherit;
+  font-size: 1rem;
+  resize: vertical;
+}
+
+/* ==========================================================================
+   Écran 8 — Construction du contexte
+   ========================================================================== */
+.contexte-grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 0.9em;
+  text-align: left;
+  margin: 1.25em 0;
+}
+.contexte-champ label { display: block; font-size: 0.9rem; color: var(--texte-att); margin-bottom: 0.3em; }
+.contexte-champ input, .contexte-champ textarea {
+  width: 100%;
+  border-radius: var(--rayon);
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.04);
+  color: var(--texte);
+  padding: 0.6em 0.75em;
+  font-family: inherit;
+}
+.previsualisation {
+  text-align: left;
+  background: rgba(111,211,199,0.08);
+  border: 1px solid rgba(111,211,199,0.3);
+  border-radius: var(--rayon);
+  padding: 1em 1.25em;
+  margin-top: 1em;
+  white-space: pre-wrap;
+  font-size: 0.98rem;
+}
+
+/* ==========================================================================
+   Écran 10 — Méthode
+   ========================================================================== */
+.methode-etapes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 1em;
+  margin: 1.5em 0;
+}
+.methode-etape {
+  background: rgba(255,255,255,0.05);
+  border-radius: var(--rayon);
+  padding: 1.5em 1em;
+  font-size: 1.1rem;
+  font-weight: 600;
+  opacity: 0;
+  transform: scale(0.92);
+  transition: opacity 500ms ease, transform 500ms ease;
+}
+.methode-etape.visible { opacity: 1; transform: scale(1); }
+.methode-etape .num { display: block; color: var(--accent); font-size: 0.85rem; margin-bottom: 0.4em; }
+
+/* ==========================================================================
+   Écran 12 — Vérification
+   ========================================================================== */
+.verification-liste {
+  list-style: none;
+  padding: 0;
+  margin: 1.25em auto 0;
+  display: grid;
+  gap: 0.6em;
+  max-width: 36rem;
+  text-align: left;
+}
+.verification-liste li {
+  background: rgba(255,255,255,0.05);
+  border-radius: var(--rayon);
+  padding: 0.6em 1em;
+}
+.verification-liste li::before { content: "☐ "; color: var(--accent); }
+
+/* ==========================================================================
+   Écran 13 — Vidéo
+   ========================================================================== */
+.video-conteneur { margin: 1.25em 0; }
+.video-conteneur video {
+  max-width: 100%;
+  max-height: 40vh;
+  border-radius: var(--rayon);
+  background: #000;
+}
+
+/* ==========================================================================
+   Écrans 15/16 — Portefeuilles (sélecteur de groupe)
+   ========================================================================== */
+.selecteur-groupe {
+  display: flex;
+  gap: 0.6em;
+  justify-content: center;
+  margin: 1em 0;
+}
+.selecteur-groupe button[aria-pressed="true"] {
+  background: var(--accent);
+  color: #05201c;
+  border-color: var(--accent);
+}
+
+.portefeuille-cartes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75em;
+  margin-top: 1.25em;
+  text-align: left;
+}
+.portefeuille-carte {
+  border-radius: var(--rayon);
+  padding: 0.9em 1em;
+  border-left: 5px solid var(--pole-career);
+  background: rgba(255,255,255,0.05);
+}
+.portefeuille-carte .pole { font-size: 0.8rem; color: var(--texte-att); display: block; margin-bottom: 0.3em; }
+.portefeuille-carte[data-pole="Career Center"] { border-left-color: var(--pole-career); }
+.portefeuille-carte[data-pole="Formation continue"] { border-left-color: var(--pole-formation); }
+.portefeuille-carte[data-pole="Taxe d'apprentissage"] { border-left-color: var(--pole-taxe); }
+.portefeuille-carte[data-pole="Alternance"] { border-left-color: var(--pole-alternance); }
+.portefeuille-carte[data-pole="Événementiel"] { border-left-color: var(--pole-event); }
+
+.situations-liste {
+  display: grid;
+  gap: 0.6em;
+  margin-top: 1.25em;
+  text-align: left;
+  max-width: 40rem;
+  margin-inline: auto;
+}
+.situations-liste li {
+  background: rgba(255,255,255,0.05);
+  border-radius: var(--rayon);
+  padding: 0.6em 1em;
+}
+
+/* ==========================================================================
+   Minuteries (écrans 18, 19)
+   ========================================================================== */
+.minuterie {
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(2.5rem, 6vw, 4rem);
+  font-weight: 700;
+  margin: 0.5em 0;
+}
+.minuterie-controles { display: flex; gap: 0.75em; justify-content: center; }
+.minuterie-etiquette { color: var(--texte-att); font-size: 1rem; }
+
+.groupe-actuel {
+  font-size: 1.1rem;
+  color: var(--accent);
+  margin-bottom: 0.5em;
+}
+
+/* ==========================================================================
+   Écran 20 — Projection
+   ========================================================================== */
+.qr-bloc {
+  margin: 1.25em auto;
+  width: 10rem;
+  height: 10rem;
+  border: 1px dashed var(--attente-bord);
+  border-radius: var(--rayon);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--texte-att);
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 0.5em;
+}
+
+/* ==========================================================================
+   Écran 21 — Conclusion
+   ========================================================================== */
+.mots-cles-finaux {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6em;
+  justify-content: center;
+  list-style: none;
+  padding: 0;
+  margin: 1.25em 0;
+  color: var(--texte-att);
+}
+
+/* ==========================================================================
+   Chrome global : jauge, navigation, plein écran
+   ========================================================================== */
+.jauge {
+  position: fixed;
+  top: 0.75em;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+  background: rgba(18,20,26,0.85);
+  backdrop-filter: blur(6px);
+  border-radius: 999px;
+  padding: 0.4em 0.9em;
+  font-size: 0.85rem;
+  opacity: 0.55;
+  transition: opacity var(--transition-rapide);
+}
+.jauge:hover, .jauge:focus-within { opacity: 1; }
+.jauge[hidden] { display: none; }
+.jauge-piste {
+  width: 8rem;
+  height: 0.5rem;
+  background: rgba(255,255,255,0.15);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.jauge-remplissage {
+  height: 100%;
+  background: var(--accent);
+  transition: width 400ms ease;
+}
+.jauge-boutons { display: flex; gap: 0.3em; }
+.jauge-boutons button { padding: 0.2em 0.55em; font-size: 0.8rem; }
+
+.nav-points {
+  position: fixed;
+  right: 0.75em;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+.nav-points button {
+  width: 0.6rem;
+  height: 0.6rem;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.4);
+  background: transparent;
+}
+.nav-points button[aria-current="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.bouton-plein-ecran {
+  position: fixed;
+  left: 0.75em;
+  top: 0.75em;
+  z-index: 200;
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  font-size: 1.1rem;
+  opacity: 0.55;
+}
+.bouton-plein-ecran:hover { opacity: 1; }
+
+@media (max-width: 640px) {
+  .nav-points { display: none; }
+  .jauge { font-size: 0.75rem; }
+  .jauge-piste { width: 5rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
