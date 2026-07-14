@@ -14,10 +14,12 @@
     attrs = attrs || {};
     for (var key in attrs) {
       if (!Object.prototype.hasOwnProperty.call(attrs, key)) continue;
-      if (key === "class") node.className = attrs[key];
-      else if (key === "html") node.innerHTML = attrs[key];
-      else if (key === "text") node.textContent = attrs[key];
-      else node.setAttribute(key, attrs[key]);
+      var valeur = attrs[key];
+      if (key === "class") node.className = valeur;
+      else if (key === "html") node.innerHTML = valeur;
+      else if (key === "text") node.textContent = valeur;
+      else if (key === "niveau") { if (valeur != null) node.setAttribute("data-reveal-level", String(valeur)); }
+      else node.setAttribute(key, valeur);
     }
     (children || []).forEach(function (child) {
       if (child) node.appendChild(child);
@@ -27,33 +29,79 @@
 
   // Un texte commençant par "⚠️" est un bloc d'attente : contenu à finaliser
   // avant la séance réelle (phrase à valider, décision non tranchée, etc.).
-  function texte(contenu, extraClass) {
+  // Ces blocs sont des notes de préparation, pas du contenu pédagogique :
+  // ils restent toujours visibles, hors du système de révélation par niveaux.
+  function texte(contenu, extraClass, niveau) {
     var estAttente = typeof contenu === "string" && contenu.indexOf("⚠️") === 0;
     var classes = estAttente ? "bloc-attente" : (extraClass || "");
-    return el("p", { class: classes }, [document.createTextNode(contenu)]);
+    return el("p", { class: classes, niveau: niveau }, [document.createTextNode(contenu)]);
   }
 
-  function liste(items, classe) {
+  function liste(items, classe, niveaux) {
     var ul = el("ul", { class: classe });
-    items.forEach(function (item) {
-      ul.appendChild(el("li", {}, [document.createTextNode(item)]));
+    items.forEach(function (item, i) {
+      var n = Array.isArray(niveaux) ? niveaux[i] : niveaux;
+      ul.appendChild(el("li", { niveau: n }, [document.createTextNode(item)]));
     });
     return ul;
   }
 
-  function ancrage(t) {
+  function ancrage(t, niveau) {
     if (!t) return null;
     var estAttente = t.indexOf("⚠️") === 0;
-    return el("p", { class: estAttente ? "ancrage bloc-attente" : "ancrage" }, [document.createTextNode(t)]);
+    return el("p", { class: estAttente ? "ancrage bloc-attente" : "ancrage", niveau: niveau }, [document.createTextNode(t)]);
   }
 
-  function relances(items) {
+  function relances(items, niveau) {
     if (!items || !items.length) return null;
-    var ul = el("ul", { class: "relances" });
+    var ul = el("ul", { class: "relances", niveau: niveau });
     items.forEach(function (r) {
       ul.appendChild(el("li", {}, [document.createTextNode(r)]));
     });
     return ul;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Moteur de révélation progressive par niveaux                        */
+  /*                                                                      */
+  /* Chaque écran peut marquer ses éléments avec un attribut              */
+  /* data-reveal-level="1|2|3" (via le paramètre "niveau" de el()/texte() */
+  /* /ancrage()/liste()/relances()). Le titre et le "chrome" (boutons     */
+  /* utilitaires, minuteries...) restent sans attribut : toujours         */
+  /* visibles. L'état d'un écran (quel niveau est atteint) se lit         */
+  /* directement dans le DOM via la classe "visible" — aucune             */
+  /* structure de données parallèle à maintenir.                         */
+  /* ------------------------------------------------------------------ */
+
+  function niveauxPresents(section) {
+    var trouves = [];
+    section.querySelectorAll("[data-reveal-level]").forEach(function (elReveal) {
+      var n = parseInt(elReveal.getAttribute("data-reveal-level"), 10);
+      if (trouves.indexOf(n) === -1) trouves.push(n);
+    });
+    trouves.sort(function (a, b) { return a - b; });
+    return trouves;
+  }
+
+  function niveauMaxDe(section) {
+    var niveaux = niveauxPresents(section);
+    return niveaux.length ? niveaux[niveaux.length - 1] : 0;
+  }
+
+  function niveauActuelDe(section) {
+    var max = 0;
+    section.querySelectorAll("[data-reveal-level].visible").forEach(function (elReveal) {
+      var n = parseInt(elReveal.getAttribute("data-reveal-level"), 10);
+      if (n > max) max = n;
+    });
+    return max;
+  }
+
+  function appliquerNiveau(section, niveau) {
+    section.querySelectorAll("[data-reveal-level]").forEach(function (elReveal) {
+      var n = parseInt(elReveal.getAttribute("data-reveal-level"), 10);
+      elReveal.classList.toggle("visible", n <= niveau);
+    });
   }
 
   /* ------------------------------------------------------------------ */
@@ -248,15 +296,24 @@
 
   /* ------------------------------------------------------------------ */
   /* Rendu de chaque type d'écran                                         */
+  /*                                                                      */
+  /* La cartographie pédagogique (niveaux 1/2/3 par écran) est appliquée  */
+  /* directement ici via le paramètre "niveau". Certains écrans n'ont pas */
+  /* de contenu distinct pour un niveau prévu par la cartographie ; dans  */
+  /* ce cas on utilise moins de niveaux plutôt que d'inventer du texte    */
+  /* (voir le résumé livré avec ces fichiers pour le détail des écarts).  */
   /* ------------------------------------------------------------------ */
 
   var rendus = {};
 
   rendus["accueil"] = function (s) {
+    var meta = el("p", { class: "meta", niveau: 1 }, [
+      document.createTextNode(DATA.meta.date + " — " + DATA.meta.horaire + " — " + DATA.meta.intervenant)
+    ]);
     var corps = el("div", { class: "screen-contenu ecran-accueil" }, [
       el("h1", { class: "titre-ecran" }, [document.createTextNode(s.titre)]),
-      el("p", { class: "meta" }, [document.createTextNode(DATA.meta.date + " — " + DATA.meta.intervenant)]),
-      ancrage(s.ancrage),
+      meta,
+      ancrage(s.ancrage, 2),
       el("div", { class: "fleche-defilement" }, [document.createTextNode("↓ Commencer")])
     ]);
     return corps;
@@ -264,61 +321,57 @@
 
   rendus["mots-cles"] = function (s) {
     var ul = el("ul", { class: "mots-cles" });
-    s.motsCles.forEach(function (mot) {
-      ul.appendChild(el("li", {}, [document.createTextNode(mot)]));
+    // Regroupement fixe en 2 lots de 3 mots, tel que défini par la
+    // cartographie (équipe/missions/métiers, puis publics/évolution/capacités).
+    s.motsCles.forEach(function (mot, i) {
+      ul.appendChild(el("li", { niveau: i < 3 ? 1 : 2 }, [document.createTextNode(mot)]));
     });
-    var corps = el("div", { class: "screen-contenu" }, [
+    return el("div", { class: "screen-contenu" }, [
       el("h2", { class: "titre-ecran" }, [document.createTextNode(s.titre)]),
       ul,
-      ancrage(s.ancrage)
+      ancrage(s.ancrage, 3)
     ]);
-    // apparition séquencée
-    requestAnimationFrame(function () {
-      var items = ul.querySelectorAll("li");
-      items.forEach(function (li, i) {
-        setTimeout(function () { li.classList.add("visible"); }, i * 150);
-      });
-    });
-    return corps;
   };
 
   rendus["deux-blocs"] = function (s) {
     var grille = el("div", { class: "deux-blocs" });
-    s.blocs.forEach(function (b) {
-      grille.appendChild(el("div", { class: "bloc" }, [
+    s.blocs.forEach(function (b, i) {
+      grille.appendChild(el("div", { class: "bloc", niveau: i + 1 }, [
         el("h3", {}, [document.createTextNode(b.titre)]),
         liste(b.points)
       ]));
     });
-    var corps = el("div", { class: "screen-contenu" }, [
+    return el("div", { class: "screen-contenu" }, [
       el("h2", { class: "titre-ecran" }, [document.createTextNode(s.titre)]),
       grille,
-      ancrage(s.ancrage)
+      ancrage(s.ancrage, 3)
     ]);
-    requestAnimationFrame(function () {
-      grille.querySelectorAll(".bloc").forEach(function (bloc, i) {
-        setTimeout(function () { bloc.classList.add("visible"); }, i * 200);
-      });
-    });
-    return corps;
   };
 
   rendus["citation"] = function (s) {
     return el("div", { class: "screen-contenu" }, [
       el("h2", { class: "titre-ecran" }, [document.createTextNode(s.titre)]),
-      el("blockquote", { class: "citation" }, [document.createTextNode(s.citation)]),
-      texte(s.source, "citation-source")
+      el("blockquote", { class: "citation", niveau: 1 }, [document.createTextNode(s.citation)]),
+      texte(s.source, "citation-source", 2)
     ]);
   };
 
   rendus["mission-collective"] = function (s) {
+    var niveaux = s.points.map(function (_, i) {
+      if (i === 0) return 1;
+      if (i === 1 || i === 2) return 2;
+      return 3;
+    });
     return el("div", { class: "screen-contenu" }, [
       el("h2", { class: "titre-ecran" }, [document.createTextNode(s.titre)]),
-      liste(s.points, "mission-liste"),
-      ancrage(s.ancrage)
+      liste(s.points, "mission-liste", niveaux),
+      ancrage(s.ancrage, 3)
     ]);
   };
 
+  // Démonstrations IA (écrans 6, 9, 11) : la structure des niveaux dépend
+  // du contenu réellement disponible sur l'écran (consigne, dossier
+  // documenté, ou ni l'un ni l'autre).
   function ecranDemonstration(s) {
     var actions = el("div", { class: "actions" });
     if (s.consigne) actions.appendChild(boutonCopier(s.consigne, "Copier la consigne"));
@@ -327,13 +380,19 @@
     var secours = boutonSecours(s.secours);
     actions.appendChild(secours.bouton);
 
+    var niveauActions = (s.consigne || s.documents) ? 2 : 1;
+    var niveauRelance = 2;
+    var niveauAncrage = 3;
+    actions.setAttribute("data-reveal-level", String(niveauActions));
+
     var enfants = [el("h2", { class: "titre-ecran" }, [document.createTextNode(s.titre)])];
-    if (s.consigne) enfants.push(el("div", { class: "consigne-box" }, [document.createTextNode(s.consigne)]));
-    enfants.push(ancrage(s.ancrage));
-    if (s.relance) enfants.push(el("p", { class: "question-groupe" }, [document.createTextNode(s.relance)]));
-    enfants.push(relances(s.relances));
+    if (s.consigne) enfants.push(el("div", { class: "consigne-box", niveau: 1 }, [document.createTextNode(s.consigne)]));
+    if (s.relance) enfants.push(el("p", { class: "question-groupe", niveau: niveauRelance }, [document.createTextNode(s.relance)]));
+    var relancesEl = relances(s.relances, niveauRelance);
+    if (relancesEl) enfants.push(relancesEl);
     enfants.push(actions);
     enfants.push(secours.zone);
+    enfants.push(ancrage(s.ancrage, niveauAncrage));
 
     return el("div", { class: "screen-contenu" }, enfants);
   }
@@ -341,7 +400,7 @@
   rendus["demonstration"] = ecranDemonstration;
 
   rendus["demonstration-documentee"] = function (s) {
-    var grille = el("div", { class: "documents-grille" });
+    var grille = el("div", { class: "documents-grille", niveau: 1 });
     s.documents.forEach(function (d) {
       grille.appendChild(el("div", { class: "document-carte" }, [
         el("span", { class: "icone" }, [document.createTextNode(d.icone)]),
@@ -349,12 +408,14 @@
       ]));
     });
     var base = ecranDemonstration(s);
-    base.insertBefore(grille, base.querySelector(".actions"));
+    // Le dossier documenté (niveau 1) doit apparaître avant la relance et
+    // les actions (niveau 2) : on l'insère juste après le titre.
+    base.insertBefore(grille, base.children[1] || null);
     return base;
   };
 
   rendus["debrief"] = function (s) {
-    var contributions = el("div", { class: "contributions" });
+    var contributions = el("div", { class: "contributions", niveau: 2 });
     for (var i = 0; i < s.champs; i++) {
       var champCle = "icl-debrief-" + s.id + "-" + i;
       var zone = el("textarea", {
@@ -390,17 +451,17 @@
 
     return el("div", { class: "screen-contenu" }, [
       el("h2", { class: "titre-ecran" }, [document.createTextNode(s.titre)]),
-      ancrage(s.ancrage),
-      el("p", { class: "question-groupe" }, [document.createTextNode(s.question)]),
-      relances(s.relances),
+      el("p", { class: "question-groupe", niveau: 1 }, [document.createTextNode(s.question)]),
+      relances(s.relances, 2),
       contributions,
-      actions
+      actions,
+      ancrage(s.ancrage, 3)
     ]);
   };
 
   rendus["contexte"] = function (s) {
     var grille = el("div", { class: "contexte-grille" });
-    var previsualisation = el("div", { class: "previsualisation" });
+    var previsualisation = el("div", { class: "previsualisation", niveau: 3 });
     var valeurs = {};
 
     function majPreview() {
@@ -412,21 +473,24 @@
       previsualisation.textContent = rendu;
     }
 
-    s.champs.forEach(function (c) {
+    // Regroupement fixe en 2 lots de 3 champs (comprendre la relation,
+    // puis cadrer l'action), tel que défini par la cartographie — les
+    // six champs ne se révèlent jamais un par un.
+    s.champs.forEach(function (c, i) {
       var idChamp = "champ-" + s.id + "-" + c.cle;
       var input = el("textarea", { id: idChamp, rows: "2" });
       input.addEventListener("input", function () {
         valeurs[c.cle] = input.value;
         majPreview();
       });
-      grille.appendChild(el("div", { class: "contexte-champ" }, [
+      grille.appendChild(el("div", { class: "contexte-champ", niveau: i < 3 ? 1 : 2 }, [
         el("label", { for: idChamp }, [document.createTextNode(c.question)]),
         input
       ]));
     });
     majPreview();
 
-    var actions = el("div", { class: "actions" });
+    var actions = el("div", { class: "actions", niveau: 3 });
     actions.appendChild(boutonCopier(function () { return previsualisation.textContent; }, "Copier le prompt"));
     var lienBtn = boutonLien(s.lienId);
     if (lienBtn) actions.appendChild(lienBtn);
@@ -453,39 +517,41 @@
 
     return el("div", { class: "screen-contenu" }, [
       el("h2", { class: "titre-ecran" }, [document.createTextNode(s.titre)]),
-      ancrage(s.ancrage),
       grille,
       previsualisation,
-      actions
+      actions,
+      ancrage(s.ancrage, 3)
     ]);
   };
 
   rendus["methode"] = function (s) {
     var grille = el("div", { class: "methode-etapes" });
     s.etapes.forEach(function (etape, i) {
-      grille.appendChild(el("div", { class: "methode-etape" }, [
+      grille.appendChild(el("div", { class: "methode-etape", niveau: i < 2 ? 1 : 2 }, [
         el("span", { class: "num" }, [document.createTextNode("Étape " + (i + 1))]),
         document.createTextNode(etape)
       ]));
     });
-    var corps = el("div", { class: "screen-contenu" }, [
+    return el("div", { class: "screen-contenu" }, [
       el("h2", { class: "titre-ecran" }, [document.createTextNode(s.titre)]),
       grille,
-      ancrage(s.ancrage)
+      ancrage(s.ancrage, 3)
     ]);
-    requestAnimationFrame(function () {
-      grille.querySelectorAll(".methode-etape").forEach(function (etape, i) {
-        setTimeout(function () { etape.classList.add("visible"); }, i * 250);
-      });
-    });
-    return corps;
   };
 
   rendus["verification"] = function (s) {
+    // Regroupement en 3 ensembles mémorisables : fiabilité, pertinence
+    // relationnelle, responsabilité (ordre des questions adapté en
+    // conséquence dans data/contenus.js, texte inchangé).
+    var niveaux = s.questions.map(function (_, i) {
+      if (i < 2) return 1;
+      if (i < 5) return 2;
+      return 3;
+    });
     return el("div", { class: "screen-contenu" }, [
       el("h2", { class: "titre-ecran" }, [document.createTextNode(s.titre)]),
       ancrage(s.ancrage),
-      liste(s.questions, "verification-liste")
+      liste(s.questions, "verification-liste", niveaux)
     ]);
   };
 
@@ -514,26 +580,26 @@
     }, 4000);
     conteneurVideo.appendChild(video);
 
+    var blocOuverture = el("div", { niveau: 1 }, [conteneurVideo, citationBloc, sourceBloc]);
+
     return el("div", { class: "screen-contenu" }, [
       el("h2", { class: "titre-ecran" }, [document.createTextNode(s.titre)]),
-      conteneurVideo,
-      citationBloc,
-      sourceBloc,
-      el("p", { class: "question-groupe" }, [document.createTextNode(s.question)])
+      blocOuverture,
+      el("p", { class: "question-groupe", niveau: 2 }, [document.createTextNode(s.question)])
     ]);
   };
 
   rendus["consigne"] = function (s) {
     return el("div", { class: "screen-contenu" }, [
       el("h2", { class: "titre-ecran" }, [document.createTextNode(s.titre)]),
-      el("div", { class: "consigne-box" }, [document.createTextNode(s.consigne)]),
-      ancrage(s.ancrage),
-      liste(s.questions, "verification-liste")
+      el("div", { class: "consigne-box", niveau: 1 }, [document.createTextNode(s.consigne)]),
+      liste(s.questions, "verification-liste", 2),
+      ancrage(s.ancrage, 3)
     ]);
   };
 
   rendus["portefeuilles-activites"] = function (s) {
-    var cartes = el("div", { class: "portefeuille-cartes" });
+    var cartes = el("div", { class: "portefeuille-cartes", niveau: 2 });
 
     function afficherGroupe(numero) {
       cartes.innerHTML = "";
@@ -547,6 +613,7 @@
     }
 
     var selecteur = creerSelecteurGroupe(afficherGroupe, 1);
+    selecteur.setAttribute("data-reveal-level", "1");
     afficherGroupe(1);
 
     return el("div", { class: "screen-contenu" }, [
@@ -558,7 +625,7 @@
   };
 
   rendus["portefeuille-situations"] = function (s) {
-    var listeSituations = el("ul", { class: "situations-liste" });
+    var listeSituations = el("ul", { class: "situations-liste", niveau: 2 });
 
     function afficherGroupe(numero) {
       listeSituations.innerHTML = "";
@@ -569,16 +636,17 @@
     }
 
     var selecteur = creerSelecteurGroupe(afficherGroupe, 1);
+    selecteur.setAttribute("data-reveal-level", "2");
     afficherGroupe(1);
 
     return el("div", { class: "screen-contenu" }, [
       el("h2", { class: "titre-ecran" }, [document.createTextNode(s.titre)]),
       texte(s.avertissement),
-      ancrage(s.ancrage),
-      el("p", { class: "question-groupe" }, [document.createTextNode(s.question)]),
+      el("p", { class: "question-groupe", niveau: 1 }, [document.createTextNode(s.question)]),
       selecteur,
       listeSituations,
-      relances(s.relances)
+      relances(s.relances, 2),
+      ancrage(s.ancrage, 3)
     ]);
   };
 
@@ -597,10 +665,10 @@
 
     return el("div", { class: "screen-contenu" }, [
       el("h2", { class: "titre-ecran" }, [document.createTextNode(s.titre)]),
-      el("div", { class: "consigne-box" }, [document.createTextNode(s.consigne)]),
-      ancrage(s.ancrage),
+      el("div", { class: "consigne-box", niveau: 1 }, [document.createTextNode(s.consigne)]),
       minuterie.element,
-      controles
+      controles,
+      ancrage(s.ancrage, 2)
     ]);
   };
 
@@ -644,35 +712,39 @@
     controles.appendChild(pauseBtn);
     controles.appendChild(suivantBtn);
 
+    // Les deux temps (30 s / 90 s) sont déjà pilotés par la minuterie
+    // elle-même (bascule automatique en fin de décompte) : seules les
+    // relances de débrief, à n'ouvrir que si utile, passent par la
+    // touche "Suivant" du système de révélation.
     return el("div", { class: "screen-contenu" }, [
       el("h2", { class: "titre-ecran" }, [document.createTextNode(s.titre)]),
       groupeActuelTexte,
       etiquette,
       minuterie.element,
       controles,
-      relances(s.relances)
+      relances(s.relances, 1)
     ]);
   };
 
   rendus["projection"] = function (s) {
     return el("div", { class: "screen-contenu" }, [
       el("h2", { class: "titre-ecran" }, [document.createTextNode(s.titre)]),
-      el("p", { class: "question-groupe" }, [document.createTextNode(s.question)]),
-      el("div", { class: "qr-bloc" }, [document.createTextNode("QR code à intégrer (assets/images/)")]),
-      texte(s.avertissement),
-      texte(s.lienCourtSecours)
+      el("p", { class: "question-groupe", niveau: 1 }, [document.createTextNode(s.question)]),
+      el("div", { class: "qr-bloc", niveau: 2 }, [document.createTextNode("QR code à intégrer (assets/images/)")]),
+      texte(s.avertissement, null, 2),
+      texte(s.lienCourtSecours, null, 2)
     ]);
   };
 
   rendus["conclusion"] = function (s) {
-    var ul = el("ul", { class: "mots-cles-finaux" });
+    var ul = el("ul", { class: "mots-cles-finaux", niveau: 1 });
     s.motsCles.forEach(function (mot) {
       ul.appendChild(el("li", {}, [document.createTextNode(mot)]));
     });
     return el("div", { class: "screen-contenu" }, [
       el("h2", { class: "titre-ecran" }, [document.createTextNode(s.titre)]),
       ul,
-      ancrage(s.ancrage)
+      ancrage(s.ancrage, 2)
     ]);
   };
 
@@ -702,19 +774,45 @@
         "aria-current": "false"
       });
       point.addEventListener("click", function () {
-        section.scrollIntoView({ behavior: "smooth" });
+        section.scrollIntoView({ behavior: preferenceMouvementReduit() ? "auto" : "smooth" });
       });
       navPoints.appendChild(point);
     });
   }
 
   /* ------------------------------------------------------------------ */
-  /* Navigation clavier + suivi de l'écran actif                         */
+  /* Navigation : clavier, molette, boutons, Stream Deck                 */
+  /*                                                                      */
+  /* Trois actions, chacune déclenchable par plusieurs touches            */
+  /* équivalentes :                                                       */
+  /*  - Suivant  (↓ / → / Espace / Page suivante) : révèle le niveau      */
+  /*    suivant de l'écran courant, ou passe à l'écran suivant si tout    */
+  /*    est déjà révélé.                                                  */
+  /*  - Retour   (↑ / ← / Page précédente) : masque le dernier niveau     */
+  /*    révélé, ou revient à l'écran précédent (dans son dernier état     */
+  /*    connu) si l'écran est déjà à son état initial.                    */
+  /*  - Tout afficher (T) : révèle immédiatement tous les niveaux de      */
+  /*    l'écran courant.                                                  */
+  /* Un verrou de courte durée empêche qu'un appui répété (molette,       */
+  /* rebond matériel, double frappe) ne déclenche plusieurs actions.      */
   /* ------------------------------------------------------------------ */
+
+  function preferenceMouvementReduit() {
+    return !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  }
 
   function initNavigation() {
     var sections = Array.prototype.slice.call(parcours.querySelectorAll(".screen"));
     var points = Array.prototype.slice.call(navPoints.querySelectorAll("button"));
+    var VERROU_MS = 350;
+    var verrouille = false;
+
+    function executerAvecVerrou(fn) {
+      if (verrouille) return;
+      verrouille = true;
+      fn();
+      setTimeout(function () { verrouille = false; }, VERROU_MS);
+    }
 
     function indexActuel() {
       var milieu = parcours.scrollTop + parcours.clientHeight / 2;
@@ -736,31 +834,106 @@
       if (jaugeEl) jaugeEl.hidden = numero < 5;
     }
 
+    function allerA(index) {
+      index = Math.max(0, Math.min(index, sections.length - 1));
+      sections[index].scrollIntoView({ behavior: preferenceMouvementReduit() ? "auto" : "smooth" });
+    }
+
+    function actionSuivant() {
+      var i = indexActuel();
+      var section = sections[i];
+      var niveau = niveauActuelDe(section);
+      var max = niveauMaxDe(section);
+      if (niveau < max) {
+        appliquerNiveau(section, niveau + 1);
+        return;
+      }
+      if (i < sections.length - 1) allerA(i + 1);
+    }
+
+    function actionRetour() {
+      var i = indexActuel();
+      var section = sections[i];
+      var niveau = niveauActuelDe(section);
+      if (niveau > 0) {
+        appliquerNiveau(section, niveau - 1);
+        return;
+      }
+      if (i > 0) allerA(i - 1);
+    }
+
+    function actionToutAfficher() {
+      var section = sections[indexActuel()];
+      appliquerNiveau(section, niveauMaxDe(section));
+    }
+
     parcours.addEventListener("scroll", function () {
       window.requestAnimationFrame(marquerActif);
     });
 
     document.addEventListener("keydown", function (e) {
       var cible = e.target;
-      var champSaisie = cible && (cible.tagName === "TEXTAREA" || cible.tagName === "INPUT");
+      var champSaisie = cible && (cible.tagName === "TEXTAREA" || cible.tagName === "INPUT" || cible.isContentEditable);
       if (champSaisie) return;
+      // Ignore l'auto-répétition d'une touche maintenue enfoncée : un
+      // seul appui doit produire un seul pas, jamais un défilement en
+      // rafale.
+      if (e.repeat) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
 
-      if (e.key === "ArrowDown" || e.key === "PageDown") {
+      var toucheSuivant = e.key === "ArrowDown" || e.key === "ArrowRight" ||
+        e.key === " " || e.key === "Spacebar" || e.code === "Space" || e.key === "PageDown";
+      var toucheRetour = e.key === "ArrowUp" || e.key === "ArrowLeft" || e.key === "PageUp";
+      var toucheToutAfficher = e.key === "t" || e.key === "T";
+
+      if (toucheSuivant) {
         e.preventDefault();
-        var suivant = Math.min(indexActuel() + 1, sections.length - 1);
-        sections[suivant].scrollIntoView({ behavior: "smooth" });
-      } else if (e.key === "ArrowUp" || e.key === "PageUp") {
+        executerAvecVerrou(actionSuivant);
+      } else if (toucheRetour) {
         e.preventDefault();
-        var precedent = Math.max(indexActuel() - 1, 0);
-        sections[precedent].scrollIntoView({ behavior: "smooth" });
+        executerAvecVerrou(actionRetour);
+      } else if (toucheToutAfficher) {
+        e.preventDefault();
+        executerAvecVerrou(actionToutAfficher);
       } else if (e.key === "Home") {
         e.preventDefault();
-        sections[0].scrollIntoView({ behavior: "smooth" });
+        executerAvecVerrou(function () { allerA(0); });
       } else if (e.key === "End") {
         e.preventDefault();
-        sections[sections.length - 1].scrollIntoView({ behavior: "smooth" });
+        executerAvecVerrou(function () { allerA(sections.length - 1); });
       }
     });
+
+    // La molette/le trackpad ne pilotent plus le défilement natif
+    // directement (trop variable d'un appareil à l'autre, risque de
+    // sauter plusieurs écrans) : un geste entier (clic-molette isolé ou
+    // fling inertiel qui envoie des dizaines d'événements sur 1-2 s) ne
+    // déclenche qu'une seule action Suivant/Retour, quelle que soit sa
+    // durée : premier événement du geste = action immédiate, tout
+    // événement suivant tant que le geste continue est ignoré, et le
+    // geste n'est considéré terminé qu'après un court silence. Le
+    // tactile (glissement sur mobile/tablette) n'est pas intercepté et
+    // continue de fonctionner nativement via le scroll-snap CSS.
+    var gesteMoletteEnCours = false;
+    var finGesteMoletteTimer = null;
+    parcours.addEventListener("wheel", function (e) {
+      e.preventDefault();
+      if (Math.abs(e.deltaY) < 4) return;
+      if (!gesteMoletteEnCours) {
+        gesteMoletteEnCours = true;
+        if (e.deltaY > 0) actionSuivant();
+        else actionRetour();
+      }
+      clearTimeout(finGesteMoletteTimer);
+      finGesteMoletteTimer = setTimeout(function () {
+        gesteMoletteEnCours = false;
+      }, 200);
+    }, { passive: false });
+
+    var boutonPrecedent = document.getElementById("bouton-precedent");
+    var boutonSuivant = document.getElementById("bouton-suivant");
+    if (boutonPrecedent) boutonPrecedent.addEventListener("click", function () { executerAvecVerrou(actionRetour); });
+    if (boutonSuivant) boutonSuivant.addEventListener("click", function () { executerAvecVerrou(actionSuivant); });
 
     marquerActif();
   }
