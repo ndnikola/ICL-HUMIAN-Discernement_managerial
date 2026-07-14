@@ -130,6 +130,24 @@ button:active { transform: scale(0.97); }
 }
 .relances li::before { content: "— "; }
 
+/* ==========================================================================
+   Révélation progressive (moteur générique par niveaux)
+   ========================================================================== */
+[data-reveal-level] {
+  opacity: 0;
+  transform: translateY(16px);
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 320ms ease, transform 320ms ease, visibility 0s linear 320ms;
+}
+[data-reveal-level].visible {
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 320ms ease, transform 320ms ease, visibility 0s linear 0s;
+}
+
 /* Bloc d'attente : contenu à finaliser avant la séance */
 .bloc-attente {
   background: var(--attente-bg);
@@ -549,6 +567,26 @@ blockquote.citation {
 }
 .bouton-plein-ecran:hover { opacity: 1; }
 
+.boutons-navigation {
+  position: fixed;
+  left: 50%;
+  bottom: 0.75em;
+  transform: translateX(-50%);
+  z-index: 200;
+  display: flex;
+  gap: 0.6em;
+}
+.boutons-navigation button {
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 1.4rem;
+  line-height: 1;
+  opacity: 0.55;
+}
+.boutons-navigation button:hover { opacity: 1; }
+
 @media (max-width: 640px) {
   .nav-points { display: none; }
   .jauge { font-size: 0.75rem; }
@@ -557,4 +595,8 @@ blockquote.citation {
 
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  /* La propriété CSS scroll-behavior l'emporte sur l'option JS
+     behavior:"auto" d'un scrollIntoView dans certains navigateurs :
+     on la neutralise explicitement ici plutôt que de compter sur le JS. */
+  .parcours { scroll-behavior: auto; }
 }
