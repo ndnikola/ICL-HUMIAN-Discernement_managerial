@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>L'IA au service de l'excellence relationnelle</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <a class="lien-evitement" href="#parcours">Aller au contenu</a>
+
+  <!-- Jauge collective : filigrane fixe, visible à partir de l'écran 5 -->
+  <div id="jauge" class="jauge" hidden aria-label="Jauge collective">
+    <div class="jauge-piste">
+      <div id="jauge-remplissage" class="jauge-remplissage" style="width:0%"></div>
+    </div>
+    <div class="jauge-valeur"><span id="jauge-valeur-texte">0</span>/100</div>
+    <div class="jauge-boutons">
+      <button type="button" data-jauge-ajout="1" aria-label="Ajouter 1 point">+1</button>
+      <button type="button" data-jauge-ajout="5" aria-label="Ajouter 5 points">+5</button>
+      <button type="button" data-jauge-ajout="10" aria-label="Ajouter 10 points">+10</button>
+      <button type="button" id="jauge-reset" aria-label="Réinitialiser la jauge (double-clic)">↺</button>
+    </div>
+  </div>
+
+  <!-- Navigation par points, cliquable et pilotée au clavier -->
+  <nav id="nav-points" class="nav-points" aria-label="Navigation entre les écrans"></nav>
+
+  <button type="button" id="bouton-plein-ecran" class="bouton-plein-ecran" aria-label="Basculer en mode plein écran">⛶</button>
+
+  <main id="parcours" class="parcours" tabindex="-1"></main>
+
+  <script src="data/contenus.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
