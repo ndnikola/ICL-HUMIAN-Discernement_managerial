@@ -17,6 +17,9 @@
   --pole-alternance: #5e9fe0;
   --pole-event: #e07f9f;
 
+  --police-body: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --police-titres: var(--police-body);
+
   --marge: clamp(1.25rem, 4vw, 4rem);
   --rayon: 0.75rem;
   --transition-rapide: 180ms ease;
@@ -38,12 +41,12 @@ html, body {
   height: 100%;
   background: var(--bg);
   color: var(--texte);
-  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--police-body);
 }
 
 body { overflow: hidden; }
 
-h1, h2, h3 { line-height: 1.2; margin: 0 0 0.75em; }
+h1, h2, h3 { line-height: 1.2; margin: 0 0 0.75em; font-family: var(--police-titres); }
 
 button {
   font-family: inherit;
