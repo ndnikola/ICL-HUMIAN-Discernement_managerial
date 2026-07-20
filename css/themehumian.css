@@ -1,0 +1,26 @@
+/* ==========================================================================
+   Thème d'essai — couleurs et police de humian-formation.fr
+   ==========================================================================
+   Ne redéfinit que les variables déjà utilisées par css/styles.css :
+   aucune structure, aucune règle de mise en page n'est touchée ici.
+
+   Pour revenir au thème d'origine : supprimer (ou commenter) la ligne
+   <link rel="stylesheet" href="css/theme-humian.css"> dans index.html.
+   Rien d'autre à faire, css/styles.css n'est pas modifié par ce fichier.
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600;700&family=Inter:wght@300;400;500&display=swap');
+
+:root {
+  --bg: #18206f;          /* deep-blue */
+  --bg-alt: #212a7c;      /* deep-blue, légèrement éclairci pour l'alternance des écrans */
+  --texte: #faf9dd;       /* cream */
+  --texte-att: #cfcdb0;   /* cream atténué, pas de variable dédiée chez Humian */
+  --accent: #e7550e;      /* accent-orange */
+  --accent-2: #cf4a0c;    /* accent-orange-dark */
+  --attente-bg: #3a2410;
+  --attente-bord: #e7550e;
+
+  --police-body: "Inter", "Segoe UI", sans-serif;
+  --police-titres: "Jost", "Segoe UI", sans-serif;
+}
