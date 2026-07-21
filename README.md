@@ -36,16 +36,17 @@ Les liens vers les conversations ChatGPT préparées en amont (écrans 6, 8, 9, 
 
 ## Blocs d'attente
 
-Certains contenus n'étaient pas encore arrêtés au moment de la construction du site. Ils sont volontairement affichés dans un encadré visuel distinct (bordure en pointillés, fond orangé) préfixé par ⚠️, afin d'être impossibles à manquer en répétition. À traiter avant la séance :
+Certains contenus n'étaient pas encore arrêtés au moment de la construction du site. Ils sont volontairement affichés dans un encadré visuel distinct (bordure en pointillés, fond orangé) préfixé par ⚠️, afin d'être impossibles à manquer en répétition. Restent à traiter avant la séance :
 
-- Phrases d'ancrage des écrans 2, 3, 5 et 14 — à formuler avec Nicolas.
-- Citation et référence de Magnifica Humanitas (écran 4) — droits de citation à vérifier.
+- Phrase d'ancrage de l'écran 14 — à formuler.
 - Tableau des portefeuilles d'activités (écran 15) — marqué comme exemple, données définitives de Frédérique à intégrer.
 - Répartition des situations par groupe (écran 16) — répartition provisoire (round-robin), à valider.
 - Outil de collecte / QR code (écran 20) — non tranché.
-- Nom de l'intervenant et effectif définitif (écran 1 / métadonnées) — à confirmer.
 - Extrait vidéo de Cynthia Fleury (écran 13) — fichier à déposer dans `assets/videos/`, droits de diffusion à vérifier ; en son absence, la citation seule s'affiche automatiquement.
-- Liens ChatGPT des écrans 6, 8, 9, 11 et résultats de secours associés — à préparer avant la séance.
+- Résultats de secours des écrans 6, 9, 11 (texte ou capture des réponses IA) — à préparer avant la séance.
+- Liens ChatGPT des écrans 6, 8, 9, 11 — à préparer avant la séance.
+
+Déjà résolu : nom de l'intervenant et effectif (écran 1), phrases d'ancrage des écrans 2, 3 et 5 (5 : jugée non nécessaire, retirée), citation et référence de Magnifica Humanitas (écran 4).
 
 Voir aussi `Docs/Analyse.md` pour l'incohérence de minutage relevée entre le budget écran par écran (150 min) et le total annoncé (169 min), à corriger avant de figer les minuteries des écrans 18 et 19.
 
