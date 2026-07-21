@@ -431,8 +431,13 @@
       contributions.appendChild(zone);
     }
 
+    // "actions" n'est pas rattaché à un niveau de révélation (utilitaire,
+    // toujours disponible) : tabindex="-1" l'exclut de la tabulation
+    // séquentielle pour éviter qu'un Tab depuis un écran antérieur ne
+    // fasse défiler la page jusqu'ici avant l'heure (bouton qui reste
+    // cliquable normalement à la souris/au tactile).
     var actions = el("div", { class: "actions" });
-    var effacer = el("button", { type: "button" }, [document.createTextNode("Effacer / réinitialiser")]);
+    var effacer = el("button", { type: "button", tabindex: "-1" }, [document.createTextNode("Effacer / réinitialiser")]);
     effacer.addEventListener("click", function () {
       if (!confirm("Effacer les contributions saisies ?")) return;
       contributions.querySelectorAll("textarea").forEach(function (t, i) {
@@ -440,7 +445,7 @@
         window.sessionStorage.removeItem("icl-debrief-" + s.id + "-" + i);
       });
     });
-    var exemples = el("button", { type: "button" }, [document.createTextNode("Afficher des exemples")]);
+    var exemples = el("button", { type: "button", tabindex: "-1" }, [document.createTextNode("Afficher des exemples")]);
     exemples.addEventListener("click", function () {
       contributions.querySelectorAll("textarea").forEach(function (t, i) {
         if (!t.value && s.exemples[i]) t.value = s.exemples[i];
@@ -652,10 +657,12 @@
 
   rendus["interlude"] = function (s) {
     var minuterie = creerMinuterie(s.dureeSecondes);
+    // Boutons utilitaires hors niveaux de révélation : tabindex="-1" pour
+    // ne pas fuiter dans la tabulation séquentielle (voir écran 7).
     var controles = el("div", { class: "minuterie-controles" });
-    var demarrerBtn = el("button", { type: "button" }, [document.createTextNode("Démarrer")]);
-    var pauseBtn = el("button", { type: "button" }, [document.createTextNode("Pause")]);
-    var reinitBtn = el("button", { type: "button" }, [document.createTextNode("Réinitialiser")]);
+    var demarrerBtn = el("button", { type: "button", tabindex: "-1" }, [document.createTextNode("Démarrer")]);
+    var pauseBtn = el("button", { type: "button", tabindex: "-1" }, [document.createTextNode("Pause")]);
+    var reinitBtn = el("button", { type: "button", tabindex: "-1" }, [document.createTextNode("Réinitialiser")]);
     demarrerBtn.addEventListener("click", minuterie.demarrer);
     pauseBtn.addEventListener("click", minuterie.arreter);
     reinitBtn.addEventListener("click", function () { minuterie.reinitialiser(); });
@@ -696,9 +703,9 @@
     var minuterie = creerMinuterie(s.temps1Secondes, phaseSuivante);
 
     var controles = el("div", { class: "minuterie-controles" });
-    var demarrerBtn = el("button", { type: "button" }, [document.createTextNode("Démarrer")]);
-    var pauseBtn = el("button", { type: "button" }, [document.createTextNode("Pause")]);
-    var suivantBtn = el("button", { type: "button" }, [document.createTextNode("Passer au groupe suivant")]);
+    var demarrerBtn = el("button", { type: "button", tabindex: "-1" }, [document.createTextNode("Démarrer")]);
+    var pauseBtn = el("button", { type: "button", tabindex: "-1" }, [document.createTextNode("Pause")]);
+    var suivantBtn = el("button", { type: "button", tabindex: "-1" }, [document.createTextNode("Passer au groupe suivant")]);
     demarrerBtn.addEventListener("click", minuterie.demarrer);
     pauseBtn.addEventListener("click", minuterie.arreter);
     suivantBtn.addEventListener("click", function () {
