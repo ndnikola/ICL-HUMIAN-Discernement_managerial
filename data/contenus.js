@@ -2,9 +2,9 @@ window.CONTENUS = {
   "meta": {
     "titrePrincipal": "L'IA au service de l'excellence relationnelle",
     "date": "21 juillet 2026",
-    "intervenant": "⚠️ Nom de l'intervenant à renseigner",
+    "intervenant": "Nicolas Ducamp",
     "horaire": "9h15 – 12h15",
-    "effectif": "19 participants (⚠️ effectif à confirmer le 15 juillet)"
+    "effectif": "19 participants"
   },
 
   "demoLiens": {
@@ -29,7 +29,7 @@ window.CONTENUS = {
       "type": "mots-cles",
       "titre": "Un service en perpétuel mouvement",
       "motsCles": ["équipe", "missions", "métiers", "publics", "évolution", "nouvelles capacités"],
-      "ancrage": "⚠️ Phrase d'ancrage à formuler avec Nicolas, selon le contenu réel de l'intro d'Olivia.",
+      "ancrage": "Ce qui ne change jamais, c'est que tout change tout le temps.",
       "dureeIndicative": "5 min"
     },
     {
@@ -47,7 +47,7 @@ window.CONTENUS = {
           "points": ["Apprendre", "Prendre du recul", "Croiser les informations", "Décider dans un environnement changeant"]
         }
       ],
-      "ancrage": "⚠️ Phrase d'ancrage à formuler avec Nicolas.",
+      "ancrage": "Une IA connaît la définition de la peur, et dans toutes les langues ! Elle ne l'a jamais ressentie.",
       "dureeIndicative": "5 min"
     },
     {
@@ -55,8 +55,8 @@ window.CONTENUS = {
       "numero": 4,
       "type": "citation",
       "titre": "Cadre institutionnel",
-      "citation": "⚠️ Citation à extraire de Magnifica Humanitas, à valider avec Nicolas (vérifier les droits de citation).",
-      "source": "⚠️ Référence précise à compléter",
+      "citation": "Nous avons le devoir urgent de rester profondément humains.",
+      "source": "Léon XIV, Lettre encyclique Magnifica Humanitas — Sur la protection de la personne humaine à l'ère de l'intelligence artificielle",
       "dureeIndicative": "3 min"
     },
     {
@@ -71,7 +71,6 @@ window.CONTENUS = {
         "La complémentarité des expertises",
         "La valeur de la relation"
       ],
-      "ancrage": "⚠️ Phrase d'ancrage à formuler, en cohérence avec l'absence de référence au silo.",
       "dureeIndicative": "5 min"
     },
     {
