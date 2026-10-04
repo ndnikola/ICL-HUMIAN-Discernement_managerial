@@ -1,0 +1,914 @@
+<!-- ==========================================================================
+     DIAGNOSTIC INTERACTIF — « Les 5 dérives invisibles de l'IA chez les managers »
+     HUMIAN Formation — bloc autonome HTML/CSS/JS (aucune dépendance)
+
+     Intégration recommandée : remplacer le contenu de la <section id="ressources">
+     existante de humian-formation.html par ce bloc (l'ancre #ressources, la
+     navbar et le CTA du hero restent inchangés).
+
+     Pré-requis déjà présents dans le site (non redéfinis ici) :
+       - variables :root  --deep-blue, --accent-orange, --accent-orange-dark,
+                          --cream, --white, --font-display, --font-body, --font-serif
+       - @import Google Fonts (Jost, Inter, Cormorant Garamond)
+       - classes .section-light, .hero-quote, .btn-primary, .btn-outline,
+                 .btn-outline-dark, .form-row, .form-input-dark
+
+     À compléter avant mise en ligne : voir le bloc CONFIGURATION dans le <script>.
+     ========================================================================== -->
+
+<style>
+  /* Toutes les règles sont préfixées .diag- pour ne rien écraser dans le site.
+     Aucune nouvelle variable : uniquement celles de la charte existante. */
+
+  #ressources .diag-wrap {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 16px;
+    font-family: var(--font-body);
+  }
+
+  .diag-eyebrow {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 0.85rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent-orange);
+    margin: 0 0 0.75rem;
+  }
+
+  .diag-titre {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(1.6rem, 4vw, 2.4rem);
+    line-height: 1.2;
+    color: var(--deep-blue);
+    margin: 0 0 1rem;
+  }
+
+  .diag-intro {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--deep-blue);
+    margin: 0 0 2rem;
+  }
+
+  /* Accessibilité : masqué visuellement, lu par les lecteurs d'écran */
+  .diag-sr {
+    position: absolute !important;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  /* ---------- Progression (collante pendant le remplissage) ---------- */
+  .diag-progress {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: var(--cream);
+    padding: 0.75rem 0;
+    margin-bottom: 1rem;
+  }
+  .diag-progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-display);
+    font-size: 0.9rem;
+    color: var(--deep-blue);
+    margin-bottom: 0.4rem;
+  }
+  .diag-progress-track {
+    height: 6px;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--deep-blue) 12%, transparent);
+    overflow: hidden;
+  }
+  .diag-progress-bar {
+    height: 100%;
+    width: 0;
+    background: var(--accent-orange);
+    transition: width 0.25s ease;
+  }
+
+  /* ---------- Questions ---------- */
+  .diag-questions {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .diag-item {
+    background: var(--white);
+    border: 1px solid color-mix(in srgb, var(--deep-blue) 12%, transparent);
+    border-left: 4px solid color-mix(in srgb, var(--deep-blue) 20%, transparent);
+    border-radius: 8px;
+    padding: 1.1rem 1.1rem 1.2rem;
+    margin-bottom: 1rem;
+    transition: border-color 0.2s ease;
+  }
+  .diag-item.is-answered { border-left-color: var(--accent-orange); }
+  .diag-item.is-missing  { border-color: var(--accent-orange); }
+
+  .diag-item fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+  .diag-item legend {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0;
+    margin-bottom: 0.9rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--deep-blue);
+  }
+  .diag-num {
+    flex: 0 0 auto;
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--accent-orange);
+  }
+
+  /* Échelle 1-5 en pilules : radios natifs (clavier + lecteurs d'écran OK) */
+  .diag-scale {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0.5rem;
+  }
+  .diag-pill { position: relative; display: block; cursor: pointer; }
+  .diag-pill input {
+    position: absolute;
+    opacity: 0;
+    width: 1px; height: 1px;
+  }
+  .diag-pill-face {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 56px;            /* zone de tap confortable au doigt */
+    padding: 0.4rem 0.25rem;
+    border: 2px solid color-mix(in srgb, var(--deep-blue) 25%, transparent);
+    border-radius: 999px;
+    background: var(--white);
+    color: var(--deep-blue);
+    text-align: center;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+  .diag-pill-n {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.1rem;
+    line-height: 1;
+  }
+  .diag-pill-t {
+    font-size: 0.72rem;
+    line-height: 1.15;
+    margin-top: 0.2rem;
+  }
+  @media (hover: hover) {
+    .diag-pill:hover .diag-pill-face { border-color: var(--accent-orange); }
+  }
+  .diag-pill input:checked + .diag-pill-face {
+    background: var(--accent-orange);
+    border-color: var(--accent-orange);
+    color: var(--white);
+  }
+  .diag-pill input:focus-visible + .diag-pill-face {
+    outline: 3px solid var(--deep-blue);
+    outline-offset: 2px;
+  }
+
+  .diag-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+    margin-top: 1.5rem;
+  }
+  .diag-actions button,
+  .diag-actions a { min-height: 48px; }
+
+  .diag-msg {
+    margin: 1rem 0 0;
+    font-size: 0.95rem;
+    color: var(--accent-orange-dark);
+    font-weight: 500;
+  }
+  .diag-msg:empty { display: none; }
+
+  /* ---------- Résultat : teaser ---------- */
+  .diag-teaser {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid color-mix(in srgb, var(--deep-blue) 12%, transparent);
+    text-align: center;
+  }
+  .diag-score {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(2.6rem, 9vw, 3.6rem);
+    line-height: 1;
+    color: var(--deep-blue);
+    margin: 0.25rem 0 0.75rem;
+  }
+  .diag-score small {
+    font-size: 0.4em;
+    font-weight: 400;
+    color: color-mix(in srgb, var(--deep-blue) 60%, transparent);
+  }
+  .diag-jauge {
+    position: relative;
+    height: 10px;
+    border-radius: 5px;
+    background: color-mix(in srgb, var(--deep-blue) 12%, transparent);
+    margin: 0 auto 1.25rem;
+    max-width: 420px;
+    overflow: hidden;
+  }
+  .diag-jauge-bar {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, var(--accent-orange-dark), var(--accent-orange));
+    transition: width 0.8s ease;
+  }
+  .diag-profil-nom {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(1.3rem, 3.5vw, 1.7rem);
+    color: var(--deep-blue);
+    margin: 0;
+  }
+  .diag-profil-niveau {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 1.25rem;
+    color: var(--accent-orange);
+    margin: 0.25rem 0 0;
+  }
+
+  /* ---------- Formulaire de capture (bloc sombre, réutilise .form-input-dark) ---------- */
+  .diag-gate {
+    background: var(--deep-blue);
+    color: var(--cream);
+    border-radius: 12px;
+    padding: 1.75rem 1.5rem;
+    margin-top: 1.5rem;
+  }
+  .diag-gate h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.3rem;
+    color: var(--white);
+    margin: 0 0 0.5rem;
+  }
+  .diag-gate p { margin: 0 0 1rem; line-height: 1.55; }
+  .diag-gate ul { margin: 0 0 1.25rem; padding-left: 1.2rem; line-height: 1.6; }
+  .diag-gate .form-row { margin-bottom: 0.75rem; }
+  .diag-gate .form-input-dark { width: 100%; box-sizing: border-box; min-height: 48px; }
+  .diag-gate .form-input-dark[aria-invalid="true"] { border-color: var(--accent-orange); }
+  .diag-consent {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin: 0.5rem 0 1rem;
+    cursor: pointer;
+  }
+  .diag-consent input {
+    flex: 0 0 auto;
+    width: 20px; height: 20px;
+    margin-top: 0.1rem;
+    accent-color: var(--accent-orange);
+  }
+  .diag-gate .diag-msg { color: var(--accent-orange); }
+
+  /* Honeypot anti-spam : hors écran, ignoré par les humains et les lecteurs d'écran */
+  .diag-hp {
+    position: absolute;
+    left: -9999px;
+    width: 1px; height: 1px;
+    overflow: hidden;
+  }
+
+  /* ---------- Résultat complet ---------- */
+  .diag-complet { margin-top: 2rem; }
+  .diag-complet h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.35rem;
+    color: var(--deep-blue);
+    margin: 2rem 0 0.75rem;
+  }
+  .diag-complet h3:first-child { margin-top: 0; }
+  .diag-profil-texte { line-height: 1.65; color: var(--deep-blue); }
+
+  .diag-derive {
+    background: var(--white);
+    border: 1px solid color-mix(in srgb, var(--deep-blue) 12%, transparent);
+    border-radius: 10px;
+    margin-bottom: 0.75rem;
+    overflow: hidden;
+  }
+  .diag-derive summary {
+    list-style: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    padding: 1rem 1.1rem;
+    min-height: 56px;
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 1.05rem;
+    color: var(--deep-blue);
+  }
+  .diag-derive summary::-webkit-details-marker { display: none; }
+  .diag-derive summary::after {
+    content: "+";
+    margin-left: auto;
+    font-size: 1.4rem;
+    color: var(--accent-orange);
+    transition: transform 0.2s ease;
+  }
+  .diag-derive[open] summary::after { transform: rotate(45deg); }
+  .diag-derive summary:focus-visible { outline: 3px solid var(--accent-orange); outline-offset: -3px; }
+  .diag-derive-num {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem; height: 2rem;
+    border-radius: 50%;
+    background: var(--deep-blue);
+    color: var(--white);
+    font-size: 0.95rem;
+  }
+  .diag-derive-corps {
+    padding: 0 1.1rem 1.2rem;
+    color: var(--deep-blue);
+    line-height: 1.6;
+  }
+  .diag-derive-corps dl { margin: 0; }
+  .diag-derive-corps dt {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.8rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-orange);
+    margin-top: 0.9rem;
+  }
+  .diag-derive-corps dd { margin: 0.2rem 0 0; }
+  .diag-derive-corps .diag-rituel {
+    background: var(--cream);
+    border-left: 3px solid var(--accent-orange);
+    padding: 0.6rem 0.8rem;
+    border-radius: 0 6px 6px 0;
+  }
+
+  .diag-cloture {
+    margin-top: 2.5rem;
+    padding: 2rem 1.5rem;
+    background: var(--deep-blue);
+    color: var(--cream);
+    border-radius: 12px;
+    text-align: center;
+  }
+  .diag-cloture .hero-quote { margin: 0 auto 1.5rem; max-width: 640px; }
+  .diag-cloture .diag-actions { justify-content: center; }
+
+  @media (max-width: 768px) {
+    .diag-scale { gap: 0.3rem; }
+    .diag-pill-face { min-height: 60px; padding: 0.4rem 0.1rem; }
+    .diag-pill-t { font-size: 0.64rem; }
+    .diag-item { padding: 1rem 0.8rem 1.1rem; }
+    .diag-actions { flex-direction: column; align-items: stretch; }
+    .diag-actions button, .diag-actions a { width: 100%; text-align: center; box-sizing: border-box; }
+    .diag-gate, .diag-teaser, .diag-cloture { padding-left: 1rem; padding-right: 1rem; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .diag-progress-bar, .diag-jauge-bar, .diag-pill-face, .diag-derive summary::after { transition: none; }
+  }
+</style>
+
+<section id="ressources" class="section-light">
+  <div class="diag-wrap">
+
+    <!-- ===================== 1. QUESTIONNAIRE ===================== -->
+    <div id="diag-etape-quiz">
+      <p class="diag-eyebrow">Diagnostic gratuit · 3 minutes</p>
+      <h2 class="diag-titre">Les 5 dérives invisibles de l'IA chez les managers</h2>
+      <p class="diag-intro">
+        Répondez aux 12 affirmations ci-dessous, de 1 (Jamais) à 5 (Très souvent).
+        Votre score et votre profil s'affichent immédiatement à la fin.
+      </p>
+
+      <form id="diag-quiz" novalidate>
+        <div class="diag-progress" aria-hidden="true">
+          <div class="diag-progress-label">
+            <span>Progression</span>
+            <span><span id="diag-progress-count">0</span>/12</span>
+          </div>
+          <div class="diag-progress-track"><div class="diag-progress-bar" id="diag-progress-bar"></div></div>
+        </div>
+
+        <!-- Les 12 affirmations sont générées par le script (tableau AFFIRMATIONS) -->
+        <ol class="diag-questions" id="diag-questions"></ol>
+
+        <p class="diag-msg" id="diag-quiz-msg" role="alert"></p>
+        <div class="diag-actions">
+          <button type="submit" class="btn-primary">Voir mon résultat</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- ===================== 2. RÉSULTAT ===================== -->
+    <div id="diag-etape-resultat" hidden>
+      <p class="diag-eyebrow">Votre résultat</p>
+      <h2 class="diag-titre" id="diag-resultat-titre" tabindex="-1">Les 5 dérives invisibles de l'IA chez les managers</h2>
+
+      <!-- 2a. Teaser : visible sans email -->
+      <div class="diag-teaser" aria-live="polite">
+        <p class="diag-score"><span id="diag-score">0</span><small> / 60</small></p>
+        <div class="diag-jauge" aria-hidden="true"><div class="diag-jauge-bar" id="diag-jauge-bar"></div></div>
+        <p class="diag-profil-nom" id="diag-profil-nom"></p>
+        <p class="diag-profil-niveau" id="diag-profil-niveau"></p>
+      </div>
+
+      <!-- 2b. Formulaire de capture -->
+      <div class="diag-gate" id="diag-gate">
+        <h3>Débloquez votre résultat complet</h3>
+        <ul>
+          <li>Le détail de votre profil</li>
+          <li>Les 5 dérives invisibles, avec leurs antidotes et micro-rituels</li>
+          <li>Le diagnostic complet en PDF</li>
+        </ul>
+
+        <form id="diag-lead" novalidate>
+          <div class="form-row">
+            <label class="diag-sr" for="diag-prenom">Prénom</label>
+            <input class="form-input-dark" type="text" id="diag-prenom" name="prenom"
+                   placeholder="Prénom" autocomplete="given-name" required maxlength="80">
+          </div>
+          <div class="form-row">
+            <label class="diag-sr" for="diag-nom">Nom</label>
+            <input class="form-input-dark" type="text" id="diag-nom" name="nom"
+                   placeholder="Nom" autocomplete="family-name" required maxlength="80">
+          </div>
+          <div class="form-row">
+            <label class="diag-sr" for="diag-email">Email professionnel</label>
+            <input class="form-input-dark" type="email" id="diag-email" name="email"
+                   placeholder="Email" autocomplete="email" required maxlength="160">
+          </div>
+
+          <!-- Honeypot : doit rester vide -->
+          <div class="diag-hp" aria-hidden="true">
+            <label for="diag-site">Ne pas remplir ce champ</label>
+            <input type="text" id="diag-site" name="site_web" tabindex="-1" autocomplete="off">
+          </div>
+
+          <!-- RGPD : texte minimal. Ajouter un lien vers la politique de
+               confidentialité du site si elle existe. -->
+          <label class="diag-consent" for="diag-rgpd">
+            <input type="checkbox" id="diag-rgpd" name="rgpd" required>
+            <span>J'accepte que HUMIAN Formation conserve mes prénom, nom, email et
+            résultat de diagnostic pour me recontacter. Je peux demander leur
+            suppression à tout moment.</span>
+          </label>
+
+          <p class="diag-msg" id="diag-lead-msg" role="alert"></p>
+          <div class="diag-actions">
+            <button type="submit" class="btn-primary" id="diag-lead-btn">Voir mon résultat complet</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- 2c. Résultat complet : déplié après soumission confirmée -->
+      <div class="diag-complet" id="diag-complet" hidden>
+        <h3 id="diag-complet-titre" tabindex="-1">Votre profil en détail</h3>
+        <p class="diag-profil-texte" id="diag-profil-texte"></p>
+
+        <h3>Les 5 dérives invisibles</h3>
+
+        <details class="diag-derive">
+          <summary><span class="diag-derive-num">1</span>La délégation cognitive</summary>
+          <div class="diag-derive-corps"><dl>
+            <dt>Ce qui se passe</dt>
+            <dd>L'IA commence progressivement à réfléchir à la place du manager. Le cerveau humain adore économiser de l'énergie : quand l'IA fournit rapidement une analyse ou une décision argumentée, la tentation est forte d'accepter sans challenger.</dd>
+            <dt>Signaux faibles</dt>
+            <dd>Vérifier moins, nuancer moins, prendre moins de temps pour penser seul, demander des réponses avant d'avoir clarifié ses questions.</dd>
+            <dt>Risque</dt>
+            <dd>Perte progressive d'esprit critique, de profondeur, de discernement.</dd>
+            <dt>Antidote</dt>
+            <dd>Avant chaque sollicitation IA, se demander : « Qu'est-ce que je pense déjà moi-même de cette situation ? »</dd>
+            <dt>Micro-rituel</dt>
+            <dd class="diag-rituel">Avant de consulter l'IA, écrire pendant 2 minutes sa propre lecture de la situation, même imparfaite.</dd>
+          </dl></div>
+        </details>
+
+        <details class="diag-derive">
+          <summary><span class="diag-derive-num">2</span>La complaisance algorithmique</summary>
+          <div class="diag-derive-corps"><dl>
+            <dt>Ce qui se passe</dt>
+            <dd>L'IA cherche naturellement à produire des réponses fluides, acceptables, rassurantes, consensuelles. Elle dit souvent ce qu'on a envie d'entendre.</dd>
+            <dt>Signaux faibles</dt>
+            <dd>Ressentir rarement de la contradiction, trouver les réponses toujours « logiques », sortir conforté de presque toutes ses interactions avec l'IA.</dd>
+            <dt>Risque</dt>
+            <dd>Voir ses biais renforcés au lieu d'être challengés.</dd>
+            <dt>Antidote</dt>
+            <dd>Se demander : « Quelle hypothèse alternative suis-je en train d'ignorer ? »</dd>
+            <dt>Micro-rituel</dt>
+            <dd class="diag-rituel">Ajouter systématiquement la consigne : « Challenge ma position, ne sois pas complaisant ».</dd>
+          </dl></div>
+        </details>
+
+        <details class="diag-derive">
+          <summary><span class="diag-derive-num">3</span>L'évitement relationnel</summary>
+          <div class="diag-derive-corps"><dl>
+            <dt>Ce qui se passe</dt>
+            <dd>L'IA devient parfois un moyen élégant d'éviter les conversations difficiles : feedbacks lissés, messages aseptisés, recadrages déshumanisés.</dd>
+            <dt>Signaux faibles</dt>
+            <dd>Utiliser l'IA pour adoucir ses messages, préparer des conversations sensibles sans clarifier son intention humaine, se sentir soulagé de laisser l'IA formuler.</dd>
+            <dt>Risque</dt>
+            <dd>Un management propre mais émotionnellement vide.</dd>
+            <dt>Antidote</dt>
+            <dd>Avant chaque conversation difficile, se demander : « Quel courage relationnel cette situation me demande-t-elle réellement ? »</dd>
+            <dt>Micro-rituel</dt>
+            <dd class="diag-rituel">Ne jamais demander à l'IA « Que dois-je dire ? » mais plutôt « Qu'est-ce que je risque de ne pas entendre ou ne pas voir ? ».</dd>
+          </dl></div>
+        </details>
+
+        <details class="diag-derive">
+          <summary><span class="diag-derive-num">4</span>L'appauvrissement du questionnement</summary>
+          <div class="diag-derive-corps"><dl>
+            <dt>Ce qui se passe</dt>
+            <dd>Le manager cherche des réponses avant d'avoir travaillé ses questions, alors que ce sont souvent les questions qui créent les vraies prises de conscience.</dd>
+            <dt>Signaux faibles</dt>
+            <dd>Aller vite vers les solutions, questionner moins ses équipes, réfléchir moins collectivement.</dd>
+            <dt>Risque</dt>
+            <dd>Des décisions rapides mais peu robustes.</dd>
+            <dt>Antidote</dt>
+            <dd>Retarder volontairement la recherche de réponse.</dd>
+            <dt>Micro-rituel</dt>
+            <dd class="diag-rituel">Avant toute demande IA importante, s'écrire 3 questions puissantes sur la situation. Pas des solutions : des questions.</dd>
+          </dl></div>
+        </details>
+
+        <details class="diag-derive">
+          <summary><span class="diag-derive-num">5</span>L'illusion de compétence</summary>
+          <div class="diag-derive-corps"><dl>
+            <dt>Ce qui se passe</dt>
+            <dd>Une formulation intelligente donne parfois l'impression d'une compétence réelle. Mais bien parler management n'est pas manager.</dd>
+            <dt>Signaux faibles</dt>
+            <dd>Produire plus vite des contenus, des formulations plus « propres », alors que les situations humaines restent difficiles sur le terrain.</dd>
+            <dt>Risque</dt>
+            <dd>Confondre qualité rédactionnelle et qualité managériale.</dd>
+            <dt>Antidote</dt>
+            <dd>Toujours revenir au réel, interroger et clarifier son intention.</dd>
+            <dt>Micro-rituel</dt>
+            <dd class="diag-rituel">Après chaque préparation IA, se demander : « Est-ce que j'assumerais réellement cette posture face à un collaborateur ? » « Est-ce moi, ou ce qu'il faudrait que je sois ? »</dd>
+          </dl></div>
+        </details>
+
+        <!-- Clôture : esprit de la charte du PDF original -->
+        <div class="diag-cloture">
+          <p class="hero-quote">
+            Le discernement reste une compétence profondément humaine. L'IA peut devenir
+            un accélérateur de lucidité, de préparation, de progression et de qualité
+            relationnelle, mais seulement si le manager reste capable de penser,
+            de ralentir, de questionner, de confronter et d'assumer.
+          </p>
+          <div class="diag-actions">
+            <a href="#contact" class="btn-primary">Planifier un échange</a>
+            <!-- href renseigné par le script après soumission (PDF_PAR_PROFIL) -->
+            <a id="diag-pdf" class="btn-outline" target="_blank" rel="noopener" download>Télécharger le diagnostic complet (PDF)</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="diag-actions">
+        <button type="button" class="btn-outline-dark" id="diag-recommencer">Refaire le diagnostic</button>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<script>
+/* Tout est encapsulé dans une IIFE : aucune variable globale créée, donc aucun
+   conflit avec le APPS_SCRIPT_URL / handleFormSubmit() déjà déclarés par le site. */
+(function () {
+  "use strict";
+
+  /* ======================= CONFIGURATION ======================= */
+
+  // Endpoint Google Apps Script déjà utilisé par le site (même pipeline de leads).
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwbqR0JW3mV-h4WvRgijNSETl0vrKsz8PHbhqU3scibMSsKBaHrlzF9athG4qB5DtfcbA/exec";
+
+  // Option (a) : true  -> envoie aussi score_total, profil_obtenu et date
+  //                      (ignorés par le Sheet tant que le script n'est pas étendu).
+  // Option (b) : false -> n'envoie que prenom, nom, email (comportement actuel).
+  // À trancher avec Nicolas avant mise en prod.
+  const ENVOYER_SCORE_ET_PROFIL = true;
+
+  // ⚠️ PLACEHOLDER — PDF de résultat à héberger sur le site, puis remplacer ces URL.
+  // Un PDF par profil est possible ; à défaut, mettre la même URL partout.
+  const PDF_PAR_PROFIL = {
+    "sous-influence": "/documents/diagnostic-5-derives-ia-managers.pdf",
+    "assiste":        "/documents/diagnostic-5-derives-ia-managers.pdf",
+    "eclaire":        "/documents/diagnostic-5-derives-ia-managers.pdf",
+    "responsable":    "/documents/diagnostic-5-derives-ia-managers.pdf"
+  };
+
+  /* ======================= CONTENU ======================= */
+
+  const ECHELLE = ["Jamais", "Rarement", "Parfois", "Souvent", "Très souvent"];
+
+  const AFFIRMATIONS = [
+    "Je challenge régulièrement les réponses de l'IA en lui demandant d'adopter des points de vue opposés ou contradictoires.",
+    "Je confronte parfois une réponse IA à une autre IA ou à une autre source avant de la considérer fiable.",
+    "Avant d'accepter une réponse IA, je prends le temps d'évaluer la logique ou le raisonnement utilisé.",
+    "Même si je réponds à un mail avec l'IA, je le remanie, je le ré-ajuste et je questionne sa cohérence.",
+    "Je garde volontairement des temps de réflexion sans IA avant de lui demander son avis.",
+    "Je distingue une réponse convaincante d'une réponse réellement pertinente ou fondée, en vérifiant les sources ou l'argumentaire.",
+    "Je demande parfois à l'IA de critiquer ses propres réponses ou d'identifier ses angles morts.",
+    "Lorsque l'IA valide mon opinion, je reste capable de conserver du doute et de remettre mon idée en question.",
+    "J'utilise l'IA davantage comme un sparring partner intellectuel que comme une machine à réponses.",
+    "Je reste attentif à ne pas déléguer à l'IA mes arbitrages humains, relationnels ou managériaux sensibles.",
+    "Je suis capable d'identifier les situations où l'IA peut m'aider et celles où elle risque d'appauvrir ma réflexion.",
+    "Je prends parfois du recul sur l'impact de l'IA sur ma manière de penser, décider, écrire ou communiquer."
+  ];
+
+  const PROFILS = [
+    { id: "sous-influence", min: 12, max: 24,
+      nom: "Manager sous influence", niveau: "Vigilance faible",
+      texte: "Vous utilisez probablement l'IA principalement comme un outil de confort et de rapidité. Le risque : accepter trop vite, moins questionner, déléguer progressivement votre réflexion sans le percevoir." },
+    { id: "assiste", min: 25, max: 39,
+      nom: "Manager assisté", niveau: "Usage en transition",
+      texte: "Vous commencez à développer de vrais réflexes de discernement. Mais certaines zones restent fragiles : recherche de validation, dépendance à la fluidité des réponses, manque de contradiction, faible temps de recul." },
+    { id: "eclaire", min: 40, max: 50,
+      nom: "Manager éclairé", niveau: "Usage lucide",
+      texte: "Vous utilisez l'IA avec une posture relativement mature. Vous semblez capable de challenger, contextualiser, conserver du doute, garder votre autonomie cognitive. L'IA devient alors un accélérateur de réflexion, pas un remplacement de la réflexion." },
+    { id: "responsable", min: 51, max: 60,
+      nom: "Manager IA responsable", niveau: "Discernement avancé",
+      texte: "Vous utilisez l'IA comme un véritable partenaire d'entraînement intellectuel. Votre posture semble fondée sur la contradiction constructive, le recul critique, la lucidité cognitive, la responsabilité humaine. Vous ne cherchez pas uniquement des réponses, vous utilisez l'IA pour mieux penser." }
+  ];
+
+  /* ======================= ÉTAT (mémoire uniquement, aucune persistance) ======================= */
+
+  const reponses = new Array(AFFIRMATIONS.length).fill(0);
+  let profilCourant = null;
+  let scoreCourant = 0;
+  let deverrouille = false;   // vrai après une soumission réussie (le temps de la visite)
+
+  const $ = function (id) { return document.getElementById(id); };
+  const section = $("ressources");
+  if (!section) return;
+
+  /* ======================= 1. QUESTIONNAIRE ======================= */
+
+  function construireQuestions() {
+    const liste = $("diag-questions");
+    AFFIRMATIONS.forEach(function (texte, i) {
+      const li = document.createElement("li");
+      li.className = "diag-item";
+      li.id = "diag-q" + (i + 1);
+
+      const fs = document.createElement("fieldset");
+      const lg = document.createElement("legend");
+      const num = document.createElement("span");
+      num.className = "diag-num";
+      num.textContent = String(i + 1).padStart(2, "0");
+      const txt = document.createElement("span");
+      txt.textContent = texte;
+      lg.append(num, txt);
+
+      const echelle = document.createElement("div");
+      echelle.className = "diag-scale";
+      ECHELLE.forEach(function (libelle, v) {
+        const label = document.createElement("label");
+        label.className = "diag-pill";
+        const input = document.createElement("input");
+        input.type = "radio";
+        input.name = "q" + (i + 1);
+        input.value = String(v + 1);
+        input.setAttribute("aria-label", (v + 1) + " : " + libelle);
+        const face = document.createElement("span");
+        face.className = "diag-pill-face";
+        face.setAttribute("aria-hidden", "true");
+        const n = document.createElement("span");
+        n.className = "diag-pill-n";
+        n.textContent = String(v + 1);
+        const t = document.createElement("span");
+        t.className = "diag-pill-t";
+        t.textContent = libelle;
+        face.append(n, t);
+        label.append(input, face);
+        echelle.appendChild(label);
+      });
+
+      fs.append(lg, echelle);
+      li.appendChild(fs);
+      liste.appendChild(li);
+    });
+
+    liste.addEventListener("change", function (e) {
+      const input = e.target;
+      if (!input || input.type !== "radio") return;
+      const index = parseInt(input.name.slice(1), 10) - 1;
+      reponses[index] = parseInt(input.value, 10);
+      const item = $("diag-q" + (index + 1));
+      item.classList.add("is-answered");
+      item.classList.remove("is-missing");
+      majProgression();
+    });
+  }
+
+  function nbRepondues() {
+    return reponses.filter(function (v) { return v > 0; }).length;
+  }
+
+  function majProgression() {
+    const n = nbRepondues();
+    $("diag-progress-count").textContent = String(n);
+    $("diag-progress-bar").style.width = (n / AFFIRMATIONS.length * 100) + "%";
+    if (n === AFFIRMATIONS.length) $("diag-quiz-msg").textContent = "";
+  }
+
+  function trouverProfil(score) {
+    for (let i = 0; i < PROFILS.length; i++) {
+      if (score >= PROFILS[i].min && score <= PROFILS[i].max) return PROFILS[i];
+    }
+    return null;
+  }
+
+  $("diag-quiz").addEventListener("submit", function (e) {
+    e.preventDefault();
+    const manquantes = [];
+    reponses.forEach(function (v, i) { if (!v) manquantes.push(i); });
+
+    if (manquantes.length) {
+      manquantes.forEach(function (i) { $("diag-q" + (i + 1)).classList.add("is-missing"); });
+      const numeros = manquantes.map(function (i) { return i + 1; }).join(", ");
+      $("diag-quiz-msg").textContent =
+        manquantes.length === AFFIRMATIONS.length ? "Répondez aux 12 affirmations pour obtenir votre résultat." :
+        manquantes.length === 1 ? "Il reste 1 affirmation sans réponse (n° " + numeros + ")." :
+        "Il reste " + manquantes.length + " affirmations sans réponse (n° " + numeros + ").";
+      const premier = $("diag-q" + (manquantes[0] + 1));
+      premier.scrollIntoView({ behavior: "smooth", block: "center" });
+      premier.querySelector("input").focus({ preventScroll: true });
+      return;
+    }
+
+    scoreCourant = reponses.reduce(function (a, b) { return a + b; }, 0);
+    profilCourant = trouverProfil(scoreCourant);
+    afficherResultat();
+  });
+
+  /* ======================= 2. RÉSULTAT ======================= */
+
+  function afficherResultat() {
+    $("diag-etape-quiz").hidden = true;
+    $("diag-etape-resultat").hidden = false;
+
+    $("diag-score").textContent = String(scoreCourant);
+    $("diag-profil-nom").textContent = profilCourant.nom;
+    $("diag-profil-niveau").textContent = profilCourant.niveau;
+    $("diag-profil-texte").textContent = profilCourant.texte;
+
+    const bar = $("diag-jauge-bar");
+    bar.style.width = "0";
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        bar.style.width = ((scoreCourant - 12) / 48 * 100) + "%";
+      });
+    });
+
+    if (deverrouille) {
+      montrerComplet(false);
+    } else {
+      $("diag-gate").hidden = false;
+      $("diag-complet").hidden = true;
+    }
+
+    section.scrollIntoView({ behavior: "smooth", block: "start" });
+    $("diag-resultat-titre").focus({ preventScroll: true });
+  }
+
+  function montrerComplet(focaliser) {
+    $("diag-gate").hidden = true;
+    $("diag-complet").hidden = false;
+    const pdf = $("diag-pdf");
+    pdf.href = PDF_PAR_PROFIL[profilCourant.id];
+    if (focaliser) {
+      const titre = $("diag-complet-titre");
+      titre.scrollIntoView({ behavior: "smooth", block: "start" });
+      titre.focus({ preventScroll: true });
+    }
+  }
+
+  /* ======================= 3. CAPTURE DU LEAD ======================= */
+
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+  function valider() {
+    const champs = [
+      { el: $("diag-prenom"), ok: function (v) { return v.length > 0; }, msg: "votre prénom" },
+      { el: $("diag-nom"),    ok: function (v) { return v.length > 0; }, msg: "votre nom" },
+      { el: $("diag-email"),  ok: function (v) { return EMAIL_RE.test(v); }, msg: "un email valide" }
+    ];
+    const erreurs = [];
+    let premierInvalide = null;
+
+    champs.forEach(function (c) {
+      const valide = c.ok(c.el.value.trim());
+      c.el.setAttribute("aria-invalid", valide ? "false" : "true");
+      if (!valide) {
+        erreurs.push(c.msg);
+        if (!premierInvalide) premierInvalide = c.el;
+      }
+    });
+
+    const rgpd = $("diag-rgpd");
+    if (!rgpd.checked) {
+      erreurs.push("votre accord pour l'utilisation de vos données");
+      if (!premierInvalide) premierInvalide = rgpd;
+    }
+
+    if (erreurs.length) {
+      $("diag-lead-msg").textContent = "Merci d'indiquer " + erreurs.join(", ") + ".";
+      premierInvalide.focus();
+      return false;
+    }
+    $("diag-lead-msg").textContent = "";
+    return true;
+  }
+
+  $("diag-lead").addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (!valider()) return;
+
+    const btn = $("diag-lead-btn");
+    const libelleInitial = btn.textContent;
+
+    // Honeypot rempli = robot : on simule un succès sans rien envoyer.
+    if ($("diag-site").value) {
+      deverrouille = true;
+      montrerComplet(true);
+      return;
+    }
+
+    // Même pattern que handleFormSubmit() du site : FormData + no-cors,
+    // sans header Content-Type (imposé par le mode no-cors).
+    const formData = new FormData();
+    formData.append("prenom", $("diag-prenom").value.trim());
+    formData.append("nom", $("diag-nom").value.trim());
+    formData.append("email", $("diag-email").value.trim());
+    if (ENVOYER_SCORE_ET_PROFIL) {
+      formData.append("score_total", String(scoreCourant));
+      formData.append("profil_obtenu", profilCourant.nom + " — " + profilCourant.niveau);
+      formData.append("date", new Date().toISOString());
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Envoi en cours…";
+
+    // En no-cors, la réponse est opaque : une promesse résolue signifie que la
+    // requête est bien partie ; seule une erreur réseau est détectable.
+    fetch(APPS_SCRIPT_URL, { method: "POST", mode: "no-cors", body: formData })
+      .then(function () {
+        deverrouille = true;
+        montrerComplet(true);
+      })
+      .catch(function () {
+        $("diag-lead-msg").textContent =
+          "L'envoi n'a pas abouti. Vérifiez votre connexion puis réessayez.";
+      })
+      .finally(function () {
+        btn.disabled = false;
+        btn.textContent = libelleInitial;
+      });
+  });
+
+  /* ======================= 4. RECOMMENCER ======================= */
+
+  $("diag-recommencer").addEventListener("click", function () {
+    reponses.fill(0);
+    $("diag-quiz").reset();
+    section.querySelectorAll(".diag-item").forEach(function (li) {
+      li.classList.remove("is-answered", "is-missing");
+    });
+    majProgression();
+    $("diag-quiz-msg").textContent = "";
+    $("diag-etape-resultat").hidden = true;
+    $("diag-etape-quiz").hidden = false;
+    section.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+
+  construireQuestions();
+})();
+</script>
